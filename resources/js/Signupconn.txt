@@ -1,0 +1,113 @@
+Step 1: Database Connection code :
+CREATE DATABASE UserDB;
+
+USE UserDB;
+
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL
+);
+
+
+
+
+Step 2: Add MySQL Connector JAR in NetBeans
+Download the MySQL Connector JAR from:
+🔗 https://dev.mysql.com/downloads/connector/j/
+
+In NetBeans, right-click your project → Properties → Libraries → Click Add JAR/Folder → Select the downloaded mysql-connector-java-X.X.X.jar → Click OK.
+
+
+
+Step 3: Create a Database Connection File (DBConnection.java)
+Create a new Java Class in NetBeans inside the src folder.
+
+📌 File: DBConnection.java
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+
+public class DBConnection {
+    private static final String URL = "jdbc:mysql://localhost:3306/UserDB";
+    private static final String USER = "root";  // Change if your MySQL has a different username
+    private static final String PASSWORD = ""; // Set your MySQL password
+
+    public static Connection getConnection() throws SQLException {
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            return DriverManager.getConnection(URL, USER, PASSWORD);
+        } catch (ClassNotFoundException | SQLException e) {
+            e.printStackTrace();
+            throw new SQLException("Database Connection Failed!");
+        }
+    }
+}
+
+
+
+
+Step 4: Create a JSP Page to Handle Signup (signup.jsp)
+Modify your signup.jsp file to insert user details into the database.
+
+📌 Updated signup.jsp
+<%@ page import="java.sql.*" %>
+<%@ page import="java.security.MessageDigest" %>
+<%@ page import="java.math.BigInteger" %>
+
+<%
+    String firstName = request.getParameter("first_name");
+    String lastName = request.getParameter("last_name");
+    String email = request.getParameter("email");
+    String password = request.getParameter("password");
+    String confirmPassword = request.getParameter("confirm_password");
+
+    if (!password.equals(confirmPassword)) {
+        out.println("<script>alert('Passwords do not match!'); window.location='signup.jsp';</script>");
+    } else {
+        // Hash the password for security
+        String hashedPassword = "";
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] messageDigest = md.digest(password.getBytes());
+            BigInteger no = new BigInteger(1, messageDigest);
+            hashedPassword = no.toString(16);
+            while (hashedPassword.length() < 32) {
+                hashedPassword = "0" + hashedPassword;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        Connection conn = null;
+        PreparedStatement pst = null;
+
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/UserDB", "root", "");
+
+            String query = "INSERT INTO users (first_name, last_name, email, password) VALUES (?, ?, ?, ?)";
+            pst = conn.prepareStatement(query);
+            pst.setString(1, firstName);
+            pst.setString(2, lastName);
+            pst.setString(3, email);
+            pst.setString(4, hashedPassword);
+
+            int row = pst.executeUpdate();
+            if (row > 0) {
+                out.println("<script>alert('Signup Successful!'); window.location='login.jsp';</script>");
+            } else {
+                out.println("<script>alert('Signup Failed! Try again.'); window.location='signup.jsp';</script>");
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            out.println("<script>alert('Database Error!'); window.location='signup.jsp';</script>");
+        } finally {
+            if (pst != null) pst.close();
+            if (conn != null) conn.close();
+        }
+    }
+%>
