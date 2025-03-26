@@ -1,0 +1,139 @@
+Here’s the final working code that integrates:
+✅ Rich Text Editing (Bold, Italics, Font Size, etc.)
+✅ Form Submission (Hidden Inputs to Capture Data)
+✅ Offline PDF & Excel Generation using JavaScript
+✅ No Database or Server-Side Storage Required
+
+
+---
+
+🔹 Full JSP Page (form.jsp)
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rich Text Form with PDF/Excel</title>
+    
+    <!-- Styles for Editable Divs -->
+    <style>
+        [contenteditable] {
+            border: 1px solid #ccc;
+            padding: 10px;
+            min-height: 30px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+    </style>
+
+    <!-- PDF & Excel Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+</head>
+<body>
+
+    <h2>Rich Text Form</h2>
+
+    <!-- Rich Text Editable Fields -->
+    <div contenteditable="true" id="assumption">Enter Assumption</div>
+    <div contenteditable="true" id="caution">Enter Caution</div>
+    <div contenteditable="true" id="description">Enter Description</div>
+
+    <!-- Formatting Buttons -->
+    <button onclick="document.execCommand('bold')">Bold</button>
+    <button onclick="document.execCommand('italic')">Italic</button>
+    <button onclick="document.execCommand('underline')">Underline</button>
+    <button onclick="changeFontSize(5)">Increase Font Size</button>
+    <br><br>
+
+    <!-- Hidden Inputs for Form Submission -->
+    <form action="save.jsp" method="post" onsubmit="syncData()">
+        <input type="hidden" name="assumptionData" id="assumptionInput">
+        <input type="hidden" name="cautionData" id="cautionInput">
+        <input type="hidden" name="descriptionData" id="descriptionInput">
+        <button type="submit">Submit</button>
+    </form>
+
+    <!-- PDF & Excel Download Buttons -->
+    <button onclick="generatePDF()">Download PDF</button>
+    <button onclick="generateExcel()">Download Excel</button>
+
+    <script>
+        // Sync Rich Text Content to Hidden Inputs Before Form Submission
+        function syncData() {
+            document.getElementById("assumptionInput").value = document.getElementById("assumption").innerHTML;
+            document.getElementById("cautionInput").value = document.getElementById("caution").innerHTML;
+            document.getElementById("descriptionInput").value = document.getElementById("description").innerHTML;
+        }
+
+        // Change Font Size
+        function changeFontSize(size) {
+            document.execCommand("fontSize", false, size);
+        }
+
+        // Generate PDF
+        function generatePDF() {
+            const { jsPDF } = window.jspdf;
+            let doc = new jsPDF();
+
+            let assumption = document.getElementById("assumption").innerText;
+            let caution = document.getElementById("caution").innerText;
+            let description = document.getElementById("description").innerText;
+
+            doc.text("Assumption:", 10, 10);
+            doc.text(assumption, 10, 20);
+            doc.text("Caution:", 10, 40);
+            doc.text(caution, 10, 50);
+            doc.text("Description:", 10, 70);
+            doc.text(description, 10, 80);
+
+            doc.save("form_data.pdf");
+        }
+
+        // Generate Excel
+        function generateExcel() {
+            let data = [
+                ["Field", "Content"],
+                ["Assumption", document.getElementById("assumption").innerText],
+                ["Caution", document.getElementById("caution").innerText],
+                ["Description", document.getElementById("description").innerText]
+            ];
+
+            let ws = XLSX.utils.aoa_to_sheet(data);
+            let wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+
+            XLSX.writeFile(wb, "form_data.xlsx");
+        }
+    </script>
+
+</body>
+</html>
+
+
+---
+
+🚀 Features Included
+
+1. Rich Text Editing (Bold, Italics, Font Size, Underline)
+
+
+2. Form Submission Support (Hidden Inputs Sync Data)
+
+
+3. Offline PDF Generation (Using jsPDF)
+
+
+4. Offline Excel Generation (Using SheetJS - XLSX)
+
+
+5. No Database Needed
+
+
+
+This eliminates the need for save.jsp unless you want to store data later.
+
+Let me know if you need any modifications!
+
