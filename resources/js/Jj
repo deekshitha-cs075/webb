@@ -1,0 +1,191 @@
+To create a user registration and login system in a Java web application using JSP, Servlets, and MariaDB, follow these steps:
+
+Step 1: Set Up the Database
+
+1. Create the Database and Table:
+
+Use the following SQL commands to create a database named UserDB and a table named users:
+
+CREATE DATABASE UserDB;
+
+USE UserDB;
+
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL
+);
+
+
+
+
+Step 2: Configure Your Java Project in NetBeans
+
+1. Add MySQL Connector JAR:
+
+Download the MySQL Connector/J from MySQL Connector/J Download Page.
+
+In NetBeans, right-click your project, select Properties, go to Libraries, click Add JAR/Folder, and add the downloaded mysql-connector-java-X.X.X.jar file.
+
+
+
+
+Step 3: Create a Database Connection Utility
+
+1. Create DBConnection.java:
+
+This class will manage the database connection:
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+
+public class DBConnection {
+    private static final String URL = "jdbc:mysql://localhost:3306/UserDB";
+    private static final String USER = "root";  // Replace with your database username
+    private static final String PASSWORD = ""; // Replace with your database password
+
+    public static Connection getConnection() throws SQLException {
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            return DriverManager.getConnection(URL, USER, PASSWORD);
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+            throw new SQLException("Database Driver not found!");
+        }
+    }
+}
+
+
+
+
+Step 4: Implement Password Hashing with BCrypt
+
+1. Add BCrypt Library:
+
+Include the jBCrypt library in your project. If using Maven, add the following dependency:
+
+<dependency>
+    <groupId>org.mindrot</groupId>
+    <artifactId>jbcrypt</artifactId>
+    <version>0.4</version>
+</dependency>
+
+If not using Maven, download the jBCrypt JAR and add it to your project's libraries.
+
+
+
+2. Hash Passwords Before Storing:
+
+Use BCrypt to hash passwords before saving them to the database:
+
+import org.mindrot.jbcrypt.BCrypt;
+
+public class PasswordUtil {
+    public static String hashPassword(String plainTextPassword) {
+        return BCrypt.hashpw(plainTextPassword, BCrypt.gensalt());
+    }
+
+    public static boolean checkPassword(String plainTextPassword, String hashedPassword) {
+        return BCrypt.checkpw(plainTextPassword, hashedPassword);
+    }
+}
+
+
+
+
+Step 5: Create JSP Pages for Signup and Login
+
+1. signup.jsp:
+
+Create a form to collect user details:
+
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Signup</title>
+</head>
+<body>
+    <form action="SignupServlet" method="post">
+        First Name: <input type="text" name="first_name" required><br>
+        Last Name: <input type="text" name="last_name" required><br>
+        Email: <input type="email" name="email" required><br>
+        Password: <input type="password" name="password" required><br>
+        Confirm Password: <input type="password" name="confirm_password" required><br>
+        <input type="submit" value="Signup">
+    </form>
+</body>
+</html>
+
+
+
+2. login.jsp:
+
+Create a form for user login:
+
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login</title>
+</head>
+<body>
+    <form action="LoginServlet" method="post">
+        Email: <input type="email" name="email" required><br>
+        Password: <input type="password" name="password" required><br>
+        <input type="submit" value="Login">
+    </form>
+</body>
+</html>
+
+
+
+
+Step 6: Create Servlets to Handle Signup and Login
+
+1. SignupServlet.java:
+
+Handle user registration:
+
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+@WebServlet("/SignupServlet")
+public class SignupServlet extends HttpServlet {
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String firstName = request.getParameter("first_name");
+        String lastName = request.getParameter("last_name");
+        String email = request.getParameter("email");
+        String password = request.getParameter("password");
+        String confirmPassword = request.getParameter("confirm_password");
+
+        if (!password.equals(confirmPassword)) {
+            response.getWriter().println("<script>alert('Passwords do not match!'); window.location='signup.jsp';</script>");
+            return;
+        }
+
+        String hashedPassword = PasswordUtil.hashPassword(password);
+
+        try (Connection conn = DBConnection.getConnection()) {
+            String query = "INSERT INTO users (first_name, last_name, email, password) VALUES (?, ?, ?, ?)";
+            try (PreparedStatement pst = conn.prepareStatement(query)) {
+                pst.setString(1, firstName);
+                pst.setString(2, lastName);
+                pst.setString(3, email);
+                pst.setString(4, hashedPassword);
+                int row = pst.executeUpdate();
+                if (row > 0) {
+                    response.getWriter().println("<script>alert('Signup Successful!'); window.location='login.jsp';</40
+
+
+
+
